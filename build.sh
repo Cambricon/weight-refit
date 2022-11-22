@@ -6,13 +6,5 @@ mkdir -p build
 rm -rf build/*
 cd build
 cmake ..
-make
-cd ..
-
-
-mkdir -p build
-rm -rf build/*
-cd build
-cmake ..
-make
+make -j4
 cd ..

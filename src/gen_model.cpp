@@ -23,8 +23,7 @@ using namespace cv;
 
 struct Args
 {
-    string prototxt = "data/deploy_resnet18-priv.prototxt";
-    string caffemodel = "data/resnet18-priv.caffemodel";
+    string model = "resnet18-v1-7.onnx";
     string output_model_file = "resnet18_model";
     string build_config_file = "build_config.json";
     string val_txt_file = "data/val.txt";
@@ -39,10 +38,10 @@ int main(int argc, char **argv){
     CLI11_PARSE(app,argc, argv);
     
     // 1. parse netowrk
-    auto parser = magicmind::CreateIParser<magicmind::ModelKind::kCaffe, string, string>();
+    auto parser = magicmind::CreateIParser<magicmind::ModelKind::kOnnx, string>();
 
     auto network = magicmind::CreateINetwork();
-    MM_CHECK_OK(parser->Parse(network, args.caffemodel, args.prototxt));
+    MM_CHECK_OK(parser->Parse(network, args.model));
 
     // 2. set input shape
     network->GetInput(0)->SetDimension(magicmind::Dims({1, 3, 224, 224}));

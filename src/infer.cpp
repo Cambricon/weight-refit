@@ -119,7 +119,8 @@ int main(int argc, char **argv)
 
 
     // apply weight refit
-    auto status = fit->SetNamedWeights("fc1000_bias", weight);
+    std::cout << "---------------------------- replace fc layer weight  ------------------------------------" <<"\n";
+    auto status = fit->SetNamedWeights("resnetv15_dense0_bias", weight);
     if(!status.ok()){
         std::cout<< "err: "  << status.error_message()<<"\n";
     }
