@@ -6,8 +6,7 @@
   - [4.运行程序](#4运行程序)
 
 ## 1.介绍
-权值热更新，即在runtime期间，支持在不重新加载模型的前提下，更新模型中的权值。   
-启用该功能需要在生成模型时，在build_config中加入，"enable_refit": true， 并获取到权值的名字，运行时期间，调用api接口重新设置权值，具体使用方法参考infer.cpp
+权值热更新，即在runtime期间，支持在不重新加载模型的前提下，更新模型中的权值（支持多线程）。   
 
 ## 2.前提条件
 
@@ -40,16 +39,87 @@ docker run -it --name=dockername \
            -w /MagicMind/ magicmind_version_image_name:tag_name /bin/bash
 ```
 
-## 4.运行程序
-
-1. 运行
+## 4.使用方法
+1. 生成模型阶段，开启权值热更    
+启用该功能需要在生成模型阶段，在build_config中添加"enable_refit": true    
+可以在代码中直接设置，也可以写在build_config.json中，通过ParseFromFile()解析
 ```bash
-# 下载模型
-./download_model.sh
-# 编译代码
+auto build_config = CreateIBuilderConfig();
+build_config->ParseFromString(R"({"enable_refit": true})");
+```
+
+2. 运行期，调用接口设置权重
+```c++
+auto fit = magicmind::CreateIRefitter(engine);
+int new_weight[9] = {9,8,7,6,5,4,3,2,1,0};
+auto weight_tensor = magicmind::CreateIRTTensor(magicmind::DataType::INT32,
+                                             "const_data",
+                                             Layout::NONE,
+                                             TensorLocation::kHost);
+weight_tensor->SetDimensions(Dims({10}));
+weight_tensor->SetData(&new_weight);
+fit->SetNamedWeights("tensor_name", weight_tensor);
+fit->RefitEngine();
+```
+
+## 运行sample
+1. 编译代码     
+```bash
 ./build.sh
-# 生成模型
-./gen_model.sh
-# 执行推理
-./run.sh
+```
+2. 生成pytorch模型    
+通过简单的代码,定义了一个只有一个卷积层模型,输入shape为(1,1,3,3),kernel size(3,3),stride(1,1),没有bias
+```bash
+python gen_pytorch_model.py
+```
+3. 转换pytorch模型为mm     
+```
+./bin/gen_model
+```
+4. 运行单线程demo
+```bash
+./bin/single_thread
+```
+该demo加载了模型的初始权重,即conv的权重全为0,因此计算结果等0,通过权值热更新接口,将卷积的权重设为全1,模型的输出变为9
+```bash
+input: 1 1 1  conv kernel: 0 0 0  result: 0
+       1 1 1               0 0 0 
+       1 1 1               0 0 0 
+--- weight refit ---
+input: 1 1 1  conv kernel: 1 1 1  result: 9
+       1 1 1               1 1 1 
+       1 1 1               1 1 1 
+```
+5. 运行多线程demo
+```bash
+./bin/multi_thread
+```
+该demo启动了两个线程,线程1一直在推理(无间断时间)并打印结果,线程2通过权值热更新接口替换权值从全0,一直到全9(每秒+1), 控制台可以观察到输出结果的变化
+```bash
+-------------------------
+input: 1 1 1  result: 0
+       1 1 1  
+       1 1 1  
+... ... 
+(a lot of log)
+... ... 
+-------------------------
+input: 1 1 1  result: 9
+       1 1 1  
+       1 1 1  
+... ... 
+(a lot of log)
+... ... 
+-------------------------
+input: 1 1 1  result: 18
+       1 1 1  
+       1 1 1  
+... ... 
+(a lot of log)
+(a lot of log)
+... ... 
+-------------------------
+input: 1 1 1  result: 81
+       1 1 1  
+       1 1 1  
 ```

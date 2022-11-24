@@ -15,8 +15,12 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 include_directories(include $ENV{NEUWARE_HOME}/include)
 link_directories($ENV{NEUWARE_HOME}/lib64)
 
-add_executable(infer src/infer.cpp src/pre_process.cpp)
-target_link_libraries(infer magicmind_runtime cnrt opencv_core opencv_imgcodecs opencv_imgproc)
+add_executable(gen_model src/gen_model.cpp)
+target_link_libraries(gen_model magicmind magicmind_parser)
 
-add_executable(gen_model src/gen_model.cpp src/calibrate.cpp src/pre_process.cpp)
-target_link_libraries(gen_model magicmind magicmind_parser opencv_core opencv_imgcodecs opencv_imgproc)
+add_executable(single_thread src/single_thread.cpp)
+target_link_libraries(single_thread magicmind_runtime cnrt)
+
+add_executable(multi_thread src/multi_thread.cpp)
+target_link_libraries(multi_thread magicmind_runtime cnrt)
+
