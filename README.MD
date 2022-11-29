@@ -7,7 +7,7 @@
     - [3.2 加载镜像](#32-加载镜像)
     - [3.3 运行容器](#33-运行容器)
   - [4.使用方法](#4使用方法)
-    - [4.1 生成模型阶段启用权值热更](#41-生成模型阶段启用权值热更)
+    - [4.1 生成模型阶段启用权值热更新](#41-生成模型阶段启用权值热更新)
     - [4.2 运行期调用接口更新权重](#42-运行期调用接口更新权重)
   - [5.运行sample](#5运行sample)
     - [5.1 编译代码](#51-编译代码)
@@ -46,14 +46,14 @@ docker load -i magicmind_version_os.tar.gz
 ```bash
 docker run -it --name=dockername \
            --network=host --cap-add=sys_ptrace \
-           -v /your/host/path/MagicMind:/MagicMind \
+           -v /your/host/path/weight_refit:/weight_refit \
            -v /usr/bin/cnmon:/usr/bin/cnmon \
            --device=/dev/cambricon_dev0:/dev/cambricon_dev0 --device=/dev/cambricon_ctl \
-           -w /MagicMind/ magicmind_version_image_name:tag_name /bin/bash
+           -w /weight_refit/ magicmind_version_image_name:tag_name /bin/bash
 ```
 
 ## 4.使用方法
-### 4.1 生成模型阶段启用权值热更            
+### 4.1 生成模型阶段启用权值热更新            
 启用该功能需要在生成模型阶段，在build_config中添加"enable_refit": true    
 ```bash
 auto build_config = CreateIBuilderConfig();
@@ -76,12 +76,13 @@ fit->RefitEngine();
 
 ## 5.运行sample
 ### 5.1 编译代码   
-编译项目中的所有c++代码,其中包含pytorch模型转mm, 单线程sample和多线程sample。
+编译项目中的所有c++代码
 ```bash
 ./build.sh
 ```
 ### 5.2 生成pytorch模型    
-gen_pytorch_model.py定义了,只有一个卷积层的模型,输入shape为(1,1,3,3),kernel size(3,3),stride(1,1),没有bias,权重初始化为全0，此时卷积的计算过程为，input和kernel对应位置相乘相加。output = input[i,j] * kernel[i,j], i,j = [1,2,3]。
+gen_pytorch_model.py定义了,只有一个卷积层的模型   
+input shape为(1,1,3,3),conv kernel size(3,3),stride(1,1),没有bias,权重初始化为全0，此时卷积的计算过程为，input和kernel对应位置相乘相加。
 ```bash
 python gen_pytorch_model.py
 ```
